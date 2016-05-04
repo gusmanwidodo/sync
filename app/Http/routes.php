@@ -15,7 +15,7 @@ Route::get('/', function() {
   return view('welcome');
 });
 
-Route::get('/company', function () {
+Route::get('/company', function() {
 
     DB::beginTransaction();
 
@@ -69,5 +69,54 @@ Route::get('/company', function () {
    	DB::commit();
 
    	return 'success';
+
+});
+
+Route::get('/product', function() {
+
+    DB::beginTransaction();
+
+    $indo = DB::connection('indonetwork');
+
+    $indo_products = $indo->table('products')->where('imported', 0)->orderBy('id', 'asc')->paginate(10);
+
+    if (count($indo_products) == 0) return 'data empty';
+
+    foreach ($indo_products as $key => $value) {
+
+      $product = new App\Product;
+
+      $company = $indo->table('companies')->where('link', 'http:'. $value->company_url)->first();
+
+      $company_id = (count($company) > 0) ? $company->id : 0;
+
+      $product->id = $value->id;
+
+      $product->company_id = $company_id;
+
+      $product->name = $value->name;
+
+      $product->description = $value->description;
+      $product->price = $value->price;
+      $product->min_qty = $value->min_qty;
+      $product->stock = $value->stock;
+      $product->status = 1;
+      $product->publish = 1;
+
+      $product->save();
+
+      $product->categories()->attach($value->category_id);
+
+      $images = App\Image::create(['file' => '', 'path' => $value->image]);
+
+      $product->images()->attach($images);
+
+      $indo->table('products')->where('id', $value->id)->update(['imported' => 1]);
+
+    }
+
+    DB::commit();
+
+    return 'success';
 
 });
