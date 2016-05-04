@@ -78,7 +78,7 @@ Route::get('/product', function() {
 
     $indo = DB::connection('indonetwork');
 
-    $indo_products = $indo->table('products')->where('imported', 0)->orderBy('id', 'asc')->paginate(10);
+    $indo_products = $indo->table('products')->where('imported', 0)->orderBy('id', 'asc')->paginate(50);
 
     if (count($indo_products) == 0) return 'data empty';
 
