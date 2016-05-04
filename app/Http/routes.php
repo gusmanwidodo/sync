@@ -36,7 +36,7 @@ Route::get('/company', function() {
    		$company->id = $value->id;
    		$company->region_id = $region_id;
 
-      $company->name = $value->name;
+      $company->name = ($value->name != '')?$value->name:'anonymous';
       $company->tagline = $value->tagline;
       $company->description = $value->description;
       $company->slug = $value->slug;
