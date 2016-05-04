@@ -94,7 +94,7 @@ Route::get('/product', function() {
 
       $product->company_id = $company_id;
 
-      $product->name = $value->name;
+      $product->name = ($value->name!='')?$value->name:'no title';
 
       $product->description = $value->description;
       $product->price = $value->price;
