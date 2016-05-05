@@ -115,6 +115,8 @@ Route::get('/product', function() {
 
     }
 
+    DB::statement("UPDATE images SET path = REPLACE(path, '40x40', '343x343')");
+
     DB::commit();
 
     return 'success';
