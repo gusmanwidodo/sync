@@ -122,3 +122,35 @@ Route::get('/product', function() {
     return 'success';
 
 });
+
+Route::get('/recheck_product', function() {
+
+  DB::beginTransaction();
+  
+  $products = App\Product::where('company_id', 0)->paginate(1);
+
+  $indo = DB::connection('indonetwork');
+
+  foreach ($products as $product) {
+
+    $indo_product = $indo->table('products')
+      ->where('name', $product->name)
+      ->where('price', $product->price)
+      ->where('min_qty', $product->min_qty)
+      ->where('stock', $product->stock)
+      ->first();
+
+    $company = $indo->table('companies')->where('link', 'http:'. $indo_product->company_url)->first();
+
+    $company_id = (count($company) > 0) ? $company->id : 0;
+    
+    $product->company_id = $company_id;
+    $product->save();
+
+  }
+
+  DB::commit();
+
+  return 'success';
+
+});
