@@ -149,7 +149,8 @@ Route::get('/recheck_product', function() {
 
   }
 
-  $delete = App\Product::where('name', 'no title')->delete();
+  $delete_product = App\Product::where('name', 'no title')->delete();
+  $delete_company = App\Company::where('name', 'no title')->delete();
 
   DB::commit();
 
