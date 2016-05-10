@@ -127,7 +127,7 @@ Route::get('/recheck_product', function() {
 
   DB::beginTransaction();
   
-  $products = App\Product::where('company_id', 0)->paginate(1);
+  $products = App\Product::where('company_id', 0)->paginate(10);
 
   $indo = DB::connection('indonetwork');
 
@@ -150,7 +150,7 @@ Route::get('/recheck_product', function() {
   }
 
   $delete_product = App\Product::where('name', 'no title')->delete();
-  $delete_company = App\Company::where('name', 'no title')->delete();
+  $delete_company = App\Company::where('name', 'anonymous')->delete();
 
   DB::commit();
 
