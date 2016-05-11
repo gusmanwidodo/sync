@@ -21,7 +21,7 @@ Route::get('/company', function() {
 
     $indo = DB::connection('indonetwork');
 
-    $indo_companies = $indo->table('companies')->where('imported', 0)->orderBy('id', 'asc')->paginate(50);
+    $indo_companies = $indo->table('companies')->where('imported', 0)->orderBy('id', 'asc')->paginate(10);
 
     if (count($indo_companies) == 0) return 'data empty';
 
@@ -78,7 +78,7 @@ Route::get('/product', function() {
 
     $indo = DB::connection('indonetwork');
 
-    $indo_products = $indo->table('products')->where('imported', 0)->orderBy('id', 'asc')->paginate(50);
+    $indo_products = $indo->table('products')->where('imported', 0)->orderBy('id', 'asc')->paginate(10);
 
     if (count($indo_products) == 0) return 'data empty';
 
