@@ -157,3 +157,29 @@ Route::get('/recheck_product', function() {
   return 'success';
 
 });
+
+Route::get('/retrieveimg', function(){
+  $images = App\Image::where('path', 'like', 'http://img.indonetwork.co.id%')->paginate(25);
+  $opts = array(
+    'http'=>array(
+      'method'=>"GET",
+      'header'=>"Accept-language: en\r\n" .
+                "Cookie: foo=bar\r\n"
+    )
+  );
+  
+    $s3 = Storage::disk('s3');
+    $i = 0;
+  foreach($images as $image){
+    $xfile = explode("/", $image->path);
+    $context = stream_context_create($opts);
+    $content_img = file_get_contents($image->path, false, $context);
+    $fname = 'img/product/'.date('Y').'/'.date('m').'/'.end($xfile);
+    if($s3->put($fname, $content_img)){
+      $image->path = $fname;
+      $image->save();
+      $i++;
+    }
+  }
+  echo $i.' retrieve';
+});
