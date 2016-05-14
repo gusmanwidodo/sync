@@ -223,6 +223,7 @@ Route::get('/exportcsv', function(){
       'Sumatera Utara-Main View.csv',
     ];   
     $datas = Excel::load("resources/csv/".($csv_s[$page - 1]), 'UTF-8')->get();
+    dd($datas);
     $exported = [];
     foreach($datas as $data){
       $r_data = new \stdClass();
