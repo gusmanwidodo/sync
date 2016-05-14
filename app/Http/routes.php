@@ -345,7 +345,7 @@ Route::get('/exportcsv', function(){
       }
     }
 
-    return response('exported: ', implode(", ", $exported));    
+    return 'exported: ', implode(", ", $exported);    
 
         
         //$region->
