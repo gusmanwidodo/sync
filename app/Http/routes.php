@@ -185,127 +185,167 @@ Route::get('/retrieveimg', function(){
 });
 
 Route::get('/exportcsv', function(){
-        
-    $datas = Excel::load("resources/csv/aceh.csv", 'UTF-8')->get();
+    $page = isset($_GET['p']) && (int) $_GET['p'] > 0 ? (int) $_GET['p'] : 1;
+    $csv_s = [
+      'Aceh-Main View.csv',
+      'Bali-Main View.csv',
+      'Banten-Main View.csv',
+      'Bengkulu-Main View.csv',
+      'Daerah Istimewa Yogyakarta-Main View.csv',
+      'DKI Jakarta-Main View.csv',
+      'Gorontalo-Main View.csv',
+      'Jambi-Main View.csv',
+      'Jawa Barat-Main View.csv',
+      'Jawa Tengah-Main View.csv',
+      'Jawa Timur-Main View.csv',
+      'Kalimantan Barat-Main View.csv',
+      'Kalimantan Selatan-Main View.csv',
+      'Kalimantan Tengah-Main View.csv',
+      'Kalimantan Timur-Main View.csv',
+      'Kalimantan Utara-Main View.csv',
+      'Kepulauan Bangka Belitung-Main View.csv',
+      'Kepulauan Riau-Main View.csv',
+      'Lampung-Main View.csv',
+      'Maluku Utara-Main View.csv',
+      'Maluku-Main View.csv',
+      'Nusa Tenggara Barat-Main View.csv',
+      'Nusa Tenggara Timur-Main View.csv',
+      'Papua Barat-Main View.csv',
+      'Papua-Main View.csv',
+      'Riau-Main View.csv',
+      'Sulawesi Barat-Main View.csv',
+      'Sulawesi Selatan-Main View.csv',
+      'Sulawesi Tengah-Main View.csv',
+      'Sulawesi Tenggara-Main View.csv',
+      'Sulawesi Utara-Main View.csv',
+      'Sumatera Barat-Main View.csv',
+      'Sumatera Selatan-Main View.csv',
+      'Sumatera Utara-Main View.csv',
+    ];   
+    $datas = Excel::load("resources/csv/".($csv_s[$page - 1]), 'UTF-8')->get();
+    $exported = [];
     foreach($datas as $data){
-        $r_data = new \stdClass();
-        foreach($data as $item_key => $item_value){
-            $r_data->$item_key = $item_value;
+      $r_data = new \stdClass();
+      foreach($data as $item_key => $item_value){
+          $r_data->$item_key = $item_value;
+      }
+
+      $region = App\Region::where('name', $r_data->kabupaten)->first();
+
+      if($region && !$region->regent_id){
+        $s3 = Storage::disk('s3');
+        $bupati_id = 0;
+        $wakil_bupati_id = 0;
+        $bupati = null;
+        if($r_data->bupati){
+          preg_match_all('/https:\/\/dl.airtable.com\/(.*?).(jpg|png)/', $r_data->attachments, $matches);
+          
+          $bupati_image = '';
+          $wakil_image = '';
+          $opts = array(
+            'http'=>array(
+              'method'=>"GET",
+              'header'=>"Accept-language: en\r\n" .
+                        "Cookie: foo=bar\r\n"
+            )
+          );
+          $context = stream_context_create($opts);
+          if($matches){
+              foreach($matches[0] as $match){
+                  preg_match('/https:\/\/dl.airtable.com\/(.*)_(.*?).(jpg|png)/', $match, $m);
+                  $str = strtolower($m[2]);
+                  if($str == 'bupati' || $str == 'walikota'){
+                      // Open the file using the HTTP headers set above
+                      $content_img = file_get_contents($match, false, $context);
+                      $fname = 'img/member/'.date('Y').'/'.date('m').'/'.str_replace('https://dl.airtable.com/', '', $match);
+                      $bupati_image = $fname;
+                      $s3->put($fname, $content_img);
+                  }elseif($str == 'wakil-bupati' || $str == 'wakil-walikota'){
+                      $content_img = file_get_contents($match, false, $context);
+                      $fname = 'img/member/'.date('Y').'/'.date('m').'/'.str_replace('https://dl.airtable.com/', '', $match);
+                      $wakil_image = $fname;
+                      $s3->put($fname, $content_img);
+                  }elseif($str == 'logo'){
+                      $content_img = file_get_contents($match, false, $context);
+                      $fname = 'img/region/'.date('Y').'/'.date('m').'/'.str_replace('https://dl.airtable.com/', '', $match);
+                      $region->logo = $fname;
+                      $s3->put($fname, $content_img);
+                  }
+              }
+          }
+          $bupati_password = str_random(6);
+          $bupati = new App\Member;
+          $bupati->firstname = $r_data->bupati;
+          $bupati->lastname = '';
+          $bupati->bio = '';
+          $bupati->username = 'bupati-'.str_slug($r_data->kabupaten);
+          $bupati->password = bcrypt($bupati_password);
+          $bupati->pmalias = $bupati_password;
+          $bupati->email = $bupati->username.'@alunalun.id';
+          $bupati->address = '';
+          $bupati->city = '';
+          $bupati->region_id = $region->id;
+          $bupati->zipcode = '';
+          $bupati->phone = '';
+          $bupati->whatsapp = '';
+          $bupati->bbm = '';
+          $bupati->image = $bupati_image;
+          $bupati->save();
+
+          $region->regent_id = $bupati->id;
+
+          if($r_data->wakil_bupati){
+            $wakil_bupati_password = str_random(6);
+            $wakil_bupati = new App\Member;
+            $wakil_bupati->firstname = $r_data->wakil_bupati;
+            $wakil_bupati->lastname = '';
+            $wakil_bupati->bio = '';
+            $wakil_bupati->username = 'wbupati-'.str_slug($r_data->kabupaten);
+            $wakil_bupati->password = bcrypt($wakil_bupati_password);
+            $wakil_bupati->pmalias = $wakil_bupati_password;
+            $wakil_bupati->email = $wakil_bupati->username.'@alunalun.id';
+            $wakil_bupati->address = '';
+            $wakil_bupati->city = '';
+            $wakil_bupati->region_id = $region->id;
+            $wakil_bupati->zipcode = '';
+            $wakil_bupati->phone = '';
+            $wakil_bupati->whatsapp = '';
+            $wakil_bupati->bbm = '';
+            $wakil_bupati->image = $wakil_image;
+            $wakil_bupati->save();
+            $region->viceregent_id = $wakil_bupati->id;
+          }
         }
 
-        dd($r_data);
+        $region->description = $r_data->deskripsi;
+        $region->area_size = str_replace(",", ".", str_replace([".", " km2"], "", $r_data->luas_wilayah));
+        
 
-        $region = Region::where('name', $r_data->kabupaten)->first();
-
-        if($region && !$region->regent_id){
-            $s3 = Storage::disk('s3');
-            $bupati_id = 0;
-            $wakil_bupati_id = 0;
-            $bupati = null;
-            if($r_data->bupati){
-                preg_match_all('/https:\/\/dl.airtable.com\/(.*?).(jpg|png)/', $r_data->attachments, $matches);
-                
-                $bupati_image = '';
-                $wakil_image = '';
-                $opts = array(
-                  'http'=>array(
-                    'method'=>"GET",
-                    'header'=>"Accept-language: en\r\n" .
-                              "Cookie: foo=bar\r\n"
-                  )
-                );
-                $context = stream_context_create($opts);
-                if($matches){
-                    foreach($matches[0] as $match){
-                        preg_match('/https:\/\/dl.airtable.com\/(.*)_(.*?).(jpg|png)/', $match, $m);
-                        $str = strtolower($m[2]);
-                        if($str == 'bupati' || $str == 'walikota'){
-                            // Open the file using the HTTP headers set above
-                            $content_img = file_get_contents($match, false, $context);
-                            $fname = str_replace('https://dl.airtable.com/', '', $match);
-                            $bupati_image = $fname;
-                            $s3->put('member/'.$fname, $content_img);
-                        }elseif($str == 'wakil-bupati' || $str == 'wakil-walikota'){
-                            $content_img = file_get_contents($match, false, $context);
-                            $fname = str_replace('https://dl.airtable.com/', '', $match);
-                            $wakil_image = $fname;
-                            $s3->put('member/'.$fname, $content_img);
-                        }elseif($str == 'logo'){
-                            $content_img = file_get_contents($match, false, $context);
-                            $fname = str_replace('https://dl.airtable.com/', '', $match);
-                            $wakil_image = $fname;
-                            $s3->put('region/'.$fname, $content_img);
-                        }
-                    }
-                }
-                $bupati_password = str_random(6);
-                $bupati = new Member;
-                $bupati->firstname = $r_data->bupati;
-                $bupati->lastname = '';
-                $bupati->bio = '';
-                $bupati->username = 'bupati-'.str_slug($r_data->kabupaten);
-                $bupati->password = bcrypt($bupati_password);
-                $bupati->pmalias = $bupati_password;
-                $bupati->email = $bupati->username.'@alunalun.id';
-                $bupati->address = '';
-                $bupati->city = '';
-                $bupati->region_id = $region->id;
-                $bupati->zipcode = '';
-                $bupati->phone = '';
-                $bupati->whatsapp = '';
-                $bupati->bbm = '';
-                $bupati->image = $bupati_image;
-                $bupati->save();
-
-                $region->regent_id = $bupati->id;
-
-                if($r_data->wakil_bupati){
-                  $wakil_bupati_password = str_random(6);
-                  $wakil_bupati = new Member;
-                  $wakil_bupati->firstname = $r_data->wakil_bupati;
-                  $wakil_bupati->lastname = '';
-                  $wakil_bupati->bio = '';
-                  $wakil_bupati->username = 'wbupati-'.str_slug($r_data->kabupaten);
-                  $wakil_bupati->password = bcrypt($wakil_bupati_password);
-                  $wakil_bupati->pmalias = $wakil_bupati_password;
-                  $wakil_bupati->email = $wakil_bupati->username.'@alunalun.id';
-                  $wakil_bupati->address = '';
-                  $wakil_bupati->city = '';
-                  $wakil_bupati->region_id = $region->id;
-                  $wakil_bupati->zipcode = '';
-                  $wakil_bupati->phone = '';
-                  $wakil_bupati->whatsapp = '';
-                  $wakil_bupati->bbm = '';
-                  $wakil_bupati->image = $wakil_image;
-                  $wakil_bupati->save();
-                  $region->viceregent_id = $wakil_bupati->id;
-                }
-            }
-
-            $region->description = $r_data->deskripsi;
-            $region->area_size = str_replace(",", ".", str_replace([".", " km2"], "", $r_data->luas_wilayah));
-            
-
-            preg_match('/^(.+) jiwa/', $r_data->populasi_total, $pop_r);
-            if($pop_r){
-                $region->population = str_replace(".", "", $pop_r[1]);
-            }
-
-            $region->save();
-            //,'region-pariwisata','region-sda','region-kuliner'
-            $pariwisata = Investment::where('slug', 'potensi-pariwisata')->first();
-            if($pariwisata){
-                $region->investments()->save($pariwisata, ['content' => $r_data->potensi_pariwisata, 'data' => '']);
-            }
-            $potensi_sda = Investment::where('slug', 'potensi-sda')->first();
-            if($potensi_sda){
-                $region->investments()->save($potensi_sda, ['content' => $r_data->potensi_sda, 'data' => '']);
-            }
-            $kuliner = Investment::where('slug', 'kuliner')->first();
-            if($kuliner){
-                $region->investments()->save($kuliner, ['content' => $r_data->kuliner_khas, 'data' => '']);
-            }
+        preg_match('/^(.+) jiwa/', $r_data->populasi_total, $pop_r);
+        if($pop_r){
+            $region->population = str_replace(".", "", $pop_r[1]);
         }
+
+        $region->save();
+        //,'region-pariwisata','region-sda','region-kuliner'
+        $pariwisata = App\Investment::where('slug', 'potensi-pariwisata')->first();
+        if($pariwisata){
+            $region->investments()->save($pariwisata, ['content' => $r_data->potensi_pariwisata, 'data' => '']);
+        }
+        $potensi_sda = App\Investment::where('slug', 'potensi-sda')->first();
+        if($potensi_sda){
+            $region->investments()->save($potensi_sda, ['content' => $r_data->potensi_sda, 'data' => '']);
+        }
+        $kuliner = App\Investment::where('slug', 'kuliner')->first();
+        if($kuliner){
+            $region->investments()->save($kuliner, ['content' => $r_data->kuliner_khas, 'data' => '']);
+        }
+
+        $exported[] = $region->id;
+      }
+    }
+
+    return response('exported: ', implode(", ", $exported));    
 
         
         //$region->

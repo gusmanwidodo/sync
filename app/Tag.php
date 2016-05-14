@@ -1,11 +1,12 @@
 <?php
+
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 use Cviebrock\EloquentSluggable\SluggableInterface;
 use Cviebrock\EloquentSluggable\SluggableTrait;
 
-class Category extends Model implements SluggableInterface
+class Tag extends Model implements SluggableInterface
 {
     //
     use SluggableTrait;
@@ -19,15 +20,5 @@ class Category extends Model implements SluggableInterface
     {
     	return $this->belongsToMany('App\Product', 'category_product');
     }
-
-    public function parent()
-    {
-        return $this->belongsTo('App\Category', 'parent_id');
-    }
-
-    public function childs()
-    {
-        return $this->hasMany('App\Category', 'parent_id');
-    }
-
+    
 }
