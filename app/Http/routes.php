@@ -223,7 +223,7 @@ Route::get('/exportcsv', function(){
       'Sumatera Utara-Main View.csv',
     ];   
     $datas = Excel::load("resources/csv/".($csv_s[$page - 1]), 'UTF-8')->get();
-    dd($datas);
+    
     $exported = [];
     foreach($datas as $data){
       $r_data = new \stdClass();
@@ -274,46 +274,55 @@ Route::get('/exportcsv', function(){
                   }
               }
           }
-          $bupati_password = str_random(6);
-          $bupati = new App\Member;
-          $bupati->firstname = $r_data->bupati;
-          $bupati->lastname = '';
-          $bupati->bio = '';
-          $bupati->username = 'bupati-'.str_slug($r_data->kabupaten);
-          $bupati->password = bcrypt($bupati_password);
-          $bupati->pmalias = $bupati_password;
-          $bupati->email = $bupati->username.'@alunalun.id';
-          $bupati->address = '';
-          $bupati->city = '';
-          $bupati->region_id = $region->id;
-          $bupati->zipcode = '';
-          $bupati->phone = '';
-          $bupati->whatsapp = '';
-          $bupati->bbm = '';
-          $bupati->image = $bupati_image;
-          $bupati->save();
+
+          $bupati = App\Member::where('username', 'bupati-'.str_slug($r_data->kabupaten))->first();
+          if(!$bupati){
+            $bupati_password = str_random(6);
+            $bupati = new App\Member;
+            $bupati->firstname = $r_data->bupati;
+            $bupati->lastname = '';
+            $bupati->bio = '';
+            $bupati->username = 'bupati-'.str_slug($r_data->kabupaten);
+            $bupati->password = bcrypt($bupati_password);
+            $bupati->pmalias = $bupati_password;
+            $bupati->email = $bupati->username.'@alunalun.id';
+            $bupati->address = '';
+            $bupati->city = '';
+            $bupati->region_id = $region->id;
+            $bupati->zipcode = '';
+            $bupati->phone = '';
+            $bupati->whatsapp = '';
+            $bupati->bbm = '';
+            $bupati->image = $bupati_image;
+            $bupati->save();
+          }
 
           $region->regent_id = $bupati->id;
 
           if($r_data->wakil_bupati){
-            $wakil_bupati_password = str_random(6);
-            $wakil_bupati = new App\Member;
-            $wakil_bupati->firstname = $r_data->wakil_bupati;
-            $wakil_bupati->lastname = '';
-            $wakil_bupati->bio = '';
-            $wakil_bupati->username = 'wbupati-'.str_slug($r_data->kabupaten);
-            $wakil_bupati->password = bcrypt($wakil_bupati_password);
-            $wakil_bupati->pmalias = $wakil_bupati_password;
-            $wakil_bupati->email = $wakil_bupati->username.'@alunalun.id';
-            $wakil_bupati->address = '';
-            $wakil_bupati->city = '';
-            $wakil_bupati->region_id = $region->id;
-            $wakil_bupati->zipcode = '';
-            $wakil_bupati->phone = '';
-            $wakil_bupati->whatsapp = '';
-            $wakil_bupati->bbm = '';
-            $wakil_bupati->image = $wakil_image;
-            $wakil_bupati->save();
+
+            $wakil_bupati = App\Member::where('username', 'wbupati-'.str_slug($r_data->kabupaten))->first();
+            
+            if(!$wakil_bupati){
+              $wakil_bupati_password = str_random(6);
+              $wakil_bupati = new App\Member;
+              $wakil_bupati->firstname = $r_data->wakil_bupati;
+              $wakil_bupati->lastname = '';
+              $wakil_bupati->bio = '';
+              $wakil_bupati->username = 'wbupati-'.str_slug($r_data->kabupaten);
+              $wakil_bupati->password = bcrypt($wakil_bupati_password);
+              $wakil_bupati->pmalias = $wakil_bupati_password;
+              $wakil_bupati->email = $wakil_bupati->username.'@alunalun.id';
+              $wakil_bupati->address = '';
+              $wakil_bupati->city = '';
+              $wakil_bupati->region_id = $region->id;
+              $wakil_bupati->zipcode = '';
+              $wakil_bupati->phone = '';
+              $wakil_bupati->whatsapp = '';
+              $wakil_bupati->bbm = '';
+              $wakil_bupati->image = $wakil_image;
+              $wakil_bupati->save();
+            }
             $region->viceregent_id = $wakil_bupati->id;
           }
         }
