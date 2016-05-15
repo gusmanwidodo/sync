@@ -175,7 +175,7 @@ Route::get('/retrieveimg', function(){
     $context = stream_context_create($opts);
     $content_img = file_get_contents($image->path, false, $context);
     $fname = 'img/product/'.date('Y').'/'.date('m').'/'.end($xfile);
-    if($s3->put($fname, $content_img)){
+    if($s3->put($fname, $content_img, 'public')){
       $image->path = $fname;
       $image->save();
       $i++;
@@ -260,17 +260,17 @@ Route::get('/exportcsv', function(){
                       $content_img = file_get_contents($match, false, $context);
                       $fname = 'img/member/'.date('Y').'/'.date('m').'/'.str_replace('https://dl.airtable.com/', '', $match);
                       $bupati_image = $fname;
-                      $s3->put($fname, $content_img);
+                      $s3->put($fname, $content_img, 'public');
                   }elseif($str == 'wakil-bupati' || $str == 'wakil-walikota'){
                       $content_img = file_get_contents($match, false, $context);
                       $fname = 'img/member/'.date('Y').'/'.date('m').'/'.str_replace('https://dl.airtable.com/', '', $match);
                       $wakil_image = $fname;
-                      $s3->put($fname, $content_img);
+                      $s3->put($fname, $content_img, 'public');
                   }elseif($str == 'logo'){
                       $content_img = file_get_contents($match, false, $context);
                       $fname = 'img/region/'.date('Y').'/'.date('m').'/'.str_replace('https://dl.airtable.com/', '', $match);
                       $region->logo = $fname;
-                      $s3->put($fname, $content_img);
+                      $s3->put($fname, $content_img, 'public');
                   }
               }
           }
