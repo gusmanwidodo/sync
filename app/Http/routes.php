@@ -237,7 +237,7 @@ Route::get('/exportcsv', function(){
 
       $region = App\Region::where('name', $r_data->kabupaten)->first();
 
-      if($region && $region->regent_id){
+      if($region){
         $s3 = Storage::disk('s3');
         $bupati_id = 0;
         $wakil_bupati_id = 0;
