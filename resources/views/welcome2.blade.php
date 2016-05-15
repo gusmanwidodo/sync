@@ -46,7 +46,7 @@
             var i = 1;
             function goExportCsv(){
                 $.ajax({
-                    url: '/exportcsv?p='+i,
+                    url: '/sync/exportcsv?p='+i,
                     success: function(d){
                         $('.title').append('<br>'+d);
                         i++;
