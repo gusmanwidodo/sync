@@ -71,7 +71,7 @@ return [
             'driver' => 'mysql',
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '3306'),
-            'database' => 'lara_alunalun',
+            'database' => 'alunalun_new',
             'username' => 'root',
             'password' => 'root',
             'charset' => 'utf8',
